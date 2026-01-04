@@ -33,5 +33,19 @@ namespace szines.API.Controllers
             await _context.SaveChangesAsync();
             return Ok(color);
         }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var color = await _context.Colors.FindAsync(id);
+
+            if (color == null)
+                return NotFound();
+
+            _context.Colors.Remove(color);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }
