@@ -11,18 +11,17 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    options.UseSqlServer(builder.Configuration["db:conn"]));
 
-builder.Services.AddCors(options =>
+builder.Services.AddCors();
+
+if (builder.Environment.IsProduction())
 {
-    options.AddPolicy("AllowFrontend", policy =>
+    builder.WebHost.ConfigureKestrel(options =>
     {
-        policy
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowAnyOrigin();
+        options.ListenAnyIP(int.Parse(builder.Configuration["settings:port"] ?? "6500"));
     });
-});
+}
 
 var app = builder.Build();
 
@@ -33,11 +32,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowFrontend");
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
+app.UseCors(t => t
+                .WithOrigins(builder.Configuration["settings:frontend"] ?? "http://localhost:4200")
+                .AllowAnyHeader()
+                .AllowCredentials()
+                .AllowAnyMethod());
 
 app.MapControllers();
 
