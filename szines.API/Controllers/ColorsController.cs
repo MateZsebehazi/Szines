@@ -6,7 +6,7 @@ using szines.API.Models;
 namespace szines.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/colors")]
     public class ColorsController : ControllerBase
     {
         private readonly AppDbContext _context;
