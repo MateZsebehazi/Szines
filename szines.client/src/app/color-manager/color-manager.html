@@ -27,7 +27,7 @@
     </div>
 
     <div class="color-card add-form" *ngIf="showAddForm">
-      <input type="text" [(ngModel)]="newColor.name" placeholder="Color Name" class="input-field">
+      <input type="text" [(ngModel)]="newColor.name" placeholder="Color Name" class="input-field" [maxlength]="30">
       <input type="color" [(ngModel)]="newColor.hexValue" class="color-picker">
       <div class="form-buttons">
         <button class="add-btn" (click)="addColor()">ADD</button>
