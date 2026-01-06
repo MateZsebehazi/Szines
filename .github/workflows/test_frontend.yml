@@ -1,0 +1,80 @@
+name: Deploy Test Angular Frontend
+
+on:
+  push:
+    branches: [ "develop" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      APP_DIR: szines.client
+      DIST_DIR: szines.client/dist/szines.client/browser
+      REMOTE_BASE: /var/www/szines/ui-test
+      SSH_HOST: zsebehazimate.hu
+      SSH_USER: root
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - name: Install deps
+        run: npm ci
+        working-directory: ${{ env.APP_DIR }}
+
+      - name: Build Angular
+        run: npm run build -- --configuration test
+        working-directory: ${{ env.APP_DIR }}
+
+      - name: Pack dist
+        run: |
+          tar -C ${{ env.DIST_DIR }} -czf frontend-${{ github.sha }}.tar.gz .
+
+      - name: Add remote host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ env.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload dist via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          password: ${{ secrets.SSH_PASS }}
+          source: "frontend-${{ github.sha }}.tar.gz"
+          target: "/tmp/"
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ env.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          password: ${{ secrets.SSH_PASS }}
+          script: |
+            set -euo pipefail
+
+            BASE="${{ env.REMOTE_BASE }}"
+
+            # Könyvtár
+            sudo mkdir -p "$BASE"
+
+            # Új release kibontása
+            sudo rm -rf "$BASE"/*
+            sudo tar -xzf "/tmp/frontend-${{ github.sha }}.tar.gz" -C "$BASE"
+            sudo rm -f "/tmp/frontend-${{ github.sha }}.tar.gz"
+
+            echo "✅ Frontend deploy kész."
