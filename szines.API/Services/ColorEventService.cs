@@ -20,9 +20,11 @@ namespace szines.API.Services
 
         public async Task NotifyClientsAsync()
         {
+            // Take a snapshot of clients to avoid concurrent modification issues
+            var clientSnapshot = _clients.ToArray();
             var deadClients = new List<string>();
 
-            foreach (var client in _clients)
+            foreach (var client in clientSnapshot)
             {
                 try
                 {
