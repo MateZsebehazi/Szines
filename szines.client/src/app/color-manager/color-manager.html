@@ -13,6 +13,15 @@
       <div class="plus-icon">+</div>
     </div>
 
+    <div class="color-card add-form" *ngIf="showAddForm">
+      <input type="text" [(ngModel)]="newColor.name" placeholder="Color Name" class="input-field" [maxlength]="30">
+      <input type="color" [(ngModel)]="newColor.hexValue" class="color-picker">
+      <div class="form-buttons">
+        <button class="add-btn" (click)="addColor()">ADD</button>
+        <button class="cancel-btn" (click)="toggleAddForm()">CANCEL</button>
+      </div>
+    </div>
+
     <div *ngFor="let color of colors" class="color-card" [style.border-color]="color.hexValue">
       <div class="color-preview" [style.background-color]="color.hexValue"></div>
       <div class="color-info">
@@ -26,13 +35,5 @@
       </button>
     </div>
 
-    <div class="color-card add-form" *ngIf="showAddForm">
-      <input type="text" [(ngModel)]="newColor.name" placeholder="Color Name" class="input-field" [maxlength]="30">
-      <input type="color" [(ngModel)]="newColor.hexValue" class="color-picker">
-      <div class="form-buttons">
-        <button class="add-btn" (click)="addColor()">ADD</button>
-        <button class="cancel-btn" (click)="toggleAddForm()">CANCEL</button>
-      </div>
-    </div>
   </div>
 </div>
