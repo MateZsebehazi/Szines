@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Colors } from '../colors';
 import { Color } from '../color';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-color-manager',
@@ -17,28 +18,37 @@ export class ColorManager implements OnInit, OnDestroy {
     name: '',
     hexValue: '#000000'
   };
-  private pollingInterval?: number;
+  private sseSubscription?: Subscription;
 
   constructor(private colorService: Colors) { }
 
   ngOnInit() {
     this.loadColors();
-    this.startPolling();
+    this.connectToSSE();
   }
 
   ngOnDestroy() {
-    this.stopPolling();
+    this.disconnectSSE();
   }
 
-  private startPolling() {
-    this.pollingInterval = window.setInterval(() => {
-      this.loadColors();
-    }, 5000);
+  private connectToSSE() {
+    this.sseSubscription = this.colorService.getColorStream().subscribe({
+      next: (message) => {
+        if (message === 'refresh') {
+          this.loadColors();
+        }
+      },
+      error: (err) => {
+        console.error('SSE connection error:', err);
+        // Reconnect after a delay
+        setTimeout(() => this.connectToSSE(), 5000);
+      }
+    });
   }
 
-  private stopPolling() {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
+  private disconnectSSE() {
+    if (this.sseSubscription) {
+      this.sseSubscription.unsubscribe();
     }
   }
 
