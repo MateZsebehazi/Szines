@@ -31,18 +31,24 @@ namespace szines.API.Services
 
         public async Task NotifyClientsAsync()
         {
+            // Take a snapshot of client keys to avoid concurrent modification issues
+            var clientKeys = _clients.Keys.ToArray();
             var deadClients = new List<string>();
 
-            foreach (var client in _clients)
+            foreach (var clientId in clientKeys)
             {
-                try
+                // Use TryGetValue for thread-safe access in case client was removed
+                if (_clients.TryGetValue(clientId, out var writer))
                 {
-                    await client.Value.WriteAsync($"data: refresh\n\n");
-                    await client.Value.FlushAsync();
-                }
-                catch
-                {
-                    deadClients.Add(client.Key);
+                    try
+                    {
+                        await writer.WriteAsync($"data: refresh\n\n");
+                        await writer.FlushAsync();
+                    }
+                    catch
+                    {
+                        deadClients.Add(clientId);
+                    }
                 }
             }
 
