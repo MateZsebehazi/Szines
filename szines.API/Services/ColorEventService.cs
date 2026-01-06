@@ -15,7 +15,18 @@ namespace szines.API.Services
 
         public void RemoveClient(string clientId)
         {
-            _clients.TryRemove(clientId, out _);
+            if (_clients.TryRemove(clientId, out var writer))
+            {
+                try
+                {
+                    writer?.Dispose();
+                }
+                catch (Exception)
+                {
+                    // Suppress exceptions during disposal to ensure client removal completes
+                    // even if the writer is already disposed or in an invalid state
+                }
+            }
         }
 
         public async Task NotifyClientsAsync()
