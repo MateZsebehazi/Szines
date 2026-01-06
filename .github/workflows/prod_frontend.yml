@@ -73,7 +73,8 @@ jobs:
             sudo mkdir -p "$BASE"
 
             # Új release kibontása
-            sudo rm -rf "$BASE"/* sudo tar -xzf "/tmp/frontend-${{ github.sha }}.tar.gz" -C "$BASE"
+            sudo rm -rf "$BASE"/*
+            sudo tar -xzf "/tmp/frontend-${{ github.sha }}.tar.gz" -C "$BASE"
             sudo rm -f "/tmp/frontend-${{ github.sha }}.tar.gz"
 
             echo "✅ Frontend deploy kész."
