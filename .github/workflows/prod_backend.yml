@@ -66,7 +66,7 @@ jobs:
         with:
           host: ${{ env.SSH_HOST }}
           username: ${{ env.SSH_USER }}
-          passphrase: ${{ secrets.SSH_PASS }}
+          password: ${{ secrets.SSH_PASS }}
           source: "app-${{ github.sha }}.tar.gz"
           target: "/tmp/"
 
@@ -75,7 +75,7 @@ jobs:
         with:
           host: ${{ env.SSH_HOST }}
           username: ${{ env.SSH_USER }}
-          passphrase: ${{ secrets.SSH_PASS }}
+          password: ${{ secrets.SSH_PASS }}
           script: |
             set -euo pipefail
 
