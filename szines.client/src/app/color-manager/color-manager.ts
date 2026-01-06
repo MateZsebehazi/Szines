@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Colors } from '../colors';
@@ -10,18 +10,36 @@ import { Color } from '../color';
   templateUrl: './color-manager.html',
   styleUrl: './color-manager.scss',
 })
-export class ColorManager implements OnInit {
+export class ColorManager implements OnInit, OnDestroy {
   colors: Color[] = [];
   showAddForm = false;
   newColor: Color = {
     name: '',
     hexValue: '#000000'
   };
+  private pollingInterval?: number;
 
   constructor(private colorService: Colors) { }
 
   ngOnInit() {
     this.loadColors();
+    this.startPolling();
+  }
+
+  ngOnDestroy() {
+    this.stopPolling();
+  }
+
+  private startPolling() {
+    this.pollingInterval = window.setInterval(() => {
+      this.loadColors();
+    }, 5000);
+  }
+
+  private stopPolling() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+    }
   }
 
   loadColors() {
