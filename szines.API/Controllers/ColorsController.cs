@@ -26,7 +26,7 @@ namespace szines.API.Controllers
             Response.Headers.Append("Cache-Control", "no-cache");
             Response.Headers.Append("Connection", "keep-alive");
 
-            var writer = new StreamWriter(Response.Body);
+            using var writer = new StreamWriter(Response.Body);
             var clientId = _eventService.AddClient(writer);
 
             try
