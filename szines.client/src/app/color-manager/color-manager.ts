@@ -32,6 +32,9 @@ export class ColorManager implements OnInit, OnDestroy {
   }
 
   private connectToSSE() {
+    // Unsubscribe from existing subscription before creating a new one
+    this.disconnectSSE();
+    
     this.sseSubscription = this.colorService.getColorStream().subscribe({
       next: (message) => {
         if (message === 'refresh') {
