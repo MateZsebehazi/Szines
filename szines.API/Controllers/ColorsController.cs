@@ -57,7 +57,7 @@ namespace szines.API.Controllers
         public async Task<IActionResult> GetAll()
         {
             var colors = await _context.Colors
-                .OrderBy(c => c.CreatedAt)
+                .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
             return Ok(colors);
