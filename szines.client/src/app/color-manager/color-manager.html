@@ -9,6 +9,10 @@
   </h1>
 
   <div class="color-grid">
+    <div class="color-card add-card" *ngIf="!showAddForm" (click)="toggleAddForm()">
+      <div class="plus-icon">+</div>
+    </div>
+
     <div *ngFor="let color of colors" class="color-card" [style.border-color]="color.hexValue">
       <div class="color-preview" [style.background-color]="color.hexValue"></div>
       <div class="color-info">
@@ -20,10 +24,6 @@
       <button class="delete-btn" (click)="deleteColor(color.id)">
         <i class="bi bi-trash"></i>
       </button>
-    </div>
-
-    <div class="color-card add-card" *ngIf="!showAddForm" (click)="toggleAddForm()">
-      <div class="plus-icon">+</div>
     </div>
 
     <div class="color-card add-form" *ngIf="showAddForm">
