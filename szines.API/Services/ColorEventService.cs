@@ -21,9 +21,10 @@ namespace szines.API.Services
                 {
                     writer?.Dispose();
                 }
-                catch
+                catch (Exception)
                 {
-                    // Suppress exceptions during disposal
+                    // Suppress exceptions during disposal to ensure client removal completes
+                    // even if the writer is already disposed or in an invalid state
                 }
             }
         }
