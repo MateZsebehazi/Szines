@@ -1,0 +1,110 @@
+name: Deploy Backend to Prod
+
+on:
+  push:
+    branches: [ "develop" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      # --- ÁLLÍTHATÓ ---
+      PROJECT_PATH: szines.API/szines.API.csproj
+      PUBLISH_DIR: publish
+      RUNTIME: linux-x64
+      SELF_CONTAINED: "true"
+      PUBLISH_SINGLE_FILE: "true"
+      # Remote könyvtárak (a Debian szerveren)
+      REMOTE_BASE: /var/www/szines/api-test                  # gyökér a deployed appnak
+      SERVICE_NAME: szines-api-test
+      FRONTEND_URL: https://test.zsebehazimate.hu
+      SSH_HOST: zsebehazimate.hu
+      SSH_USER: root
+      # --- SECRET-ek (Repo Settings → Secrets and variables → Actions) ---
+      # SSH_KEY, SSH_PASS, DB_CONN
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Publish (Release, Linux)
+        run: |
+          dotnet publish ${{ env.PROJECT_PATH }} \
+            -c Release \
+            -r ${{ env.RUNTIME }} \
+            -p:PublishSingleFile=${{ env.PUBLISH_SINGLE_FILE }} \
+            --self-contained ${{ env.SELF_CONTAINED }} \
+            -o ${{ env.PUBLISH_DIR }}
+
+      - name: Pack artifact (tar.gz)
+        run: |
+          tar -C ${{ env.PUBLISH_DIR }} -czf app-${{ github.sha }}.tar.gz .
+
+      - name: Add remote host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ env.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload package via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          password: ${{ secrets.SSH_PASS }}
+          source: "app-${{ github.sha }}.tar.gz"
+          target: "/tmp/"
+
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ env.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          password: ${{ secrets.SSH_PASS }}
+          script: |
+            set -euo pipefail
+
+            SERVICE="${{ env.SERVICE_NAME }}"
+            BASE="${{ env.REMOTE_BASE }}"
+
+            sudo mkdir -p "$BASE"
+            sudo systemctl stop "$SERVICE"
+
+            # Kibontás prod mappába
+            sudo tar -xzf "/tmp/app-${{ github.sha }}.tar.gz" -C "$BASE"
+            sudo rm -f "/tmp/app-${{ github.sha }}.tar.gz"
+
+            # appsettings.json módosítása (db:conn + settings:frontend -> secretből)
+            if command -v jq >/dev/null; then
+              sudo jq \
+                --arg conn "${{ secrets.TEST_DB_CONN }}" \
+                --arg frontend "${{ env.FRONTEND_URL }}" \
+                '.db.conn = $conn | .settings.frontend = $frontend' \
+                "$BASE/appsettings.json" | sudo tee "$BASE/appsettings.json.tmp" > /dev/null
+              sudo mv "$BASE/appsettings.json.tmp" "$BASE/appsettings.json"
+            else
+              echo "jq nincs telepítve, telepíteni kell!"
+              exit 1
+            fi
+
+            # Service újraindítás + engedélyezés
+            sudo systemctl daemon-reload || true
+            sudo systemctl start "$SERVICE"
+            sudo systemctl enable "$SERVICE" || true
+
+            sudo systemctl status "$SERVICE" --no-pager -l || true
