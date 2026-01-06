@@ -35,6 +35,7 @@ export class Colors {
 
       eventSource.onerror = (error) => {
         this.ngZone.run(() => {
+          eventSource.close();
           observer.error(error);
         });
       };
