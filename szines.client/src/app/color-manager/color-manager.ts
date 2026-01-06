@@ -17,7 +17,7 @@ export class ColorManager implements OnInit, OnDestroy {
     name: '',
     hexValue: '#000000'
   };
-  private pollingInterval?: number;
+  private pollingInterval?: ReturnType<typeof setInterval>;
 
   constructor(private colorService: Colors) { }
 
