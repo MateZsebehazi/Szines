@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Colors } from '../colors';
 import { Color } from '../color';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-color-manager',
@@ -10,18 +11,48 @@ import { Color } from '../color';
   templateUrl: './color-manager.html',
   styleUrl: './color-manager.scss',
 })
-export class ColorManager implements OnInit {
+export class ColorManager implements OnInit, OnDestroy {
   colors: Color[] = [];
   showAddForm = false;
   newColor: Color = {
     name: '',
     hexValue: '#000000'
   };
+  private sseSubscription?: Subscription;
 
   constructor(private colorService: Colors) { }
 
   ngOnInit() {
     this.loadColors();
+    this.connectToSSE();
+  }
+
+  ngOnDestroy() {
+    this.disconnectSSE();
+  }
+
+  private connectToSSE() {
+    // Unsubscribe from existing subscription before creating a new one
+    this.disconnectSSE();
+    
+    this.sseSubscription = this.colorService.getColorStream().subscribe({
+      next: (message) => {
+        if (message === 'refresh') {
+          this.loadColors();
+        }
+      },
+      error: (err) => {
+        console.error('SSE connection error:', err);
+        // Reconnect after a delay
+        setTimeout(() => this.connectToSSE(), 5000);
+      }
+    });
+  }
+
+  private disconnectSSE() {
+    if (this.sseSubscription) {
+      this.sseSubscription.unsubscribe();
+    }
   }
 
   loadColors() {

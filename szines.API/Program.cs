@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using szines.API.Data;
+using szines.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+builder.Services.AddSingleton<ColorEventService>();
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -56,11 +58,11 @@ using (var scope = app.Services.CreateScope())
 
         context.Database.Migrate();
 
-        Console.WriteLine("Adatbázis sikeresen frissítve!");
+        Console.WriteLine("Adatbï¿½zis sikeresen frissï¿½tve!");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Hiba a migráció során: {ex.Message}");
+        Console.WriteLine($"Hiba a migrï¿½ciï¿½ sorï¿½n: {ex.Message}");
     }
 }
 
