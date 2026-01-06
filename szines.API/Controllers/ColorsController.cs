@@ -31,10 +31,6 @@ namespace szines.API.Controllers
 
             try
             {
-                // Send initial connection confirmation
-                await writer.WriteAsync($"data: connected\n\n");
-                await writer.FlushAsync();
-
                 // Keep connection alive until cancelled
                 while (!cancellationToken.IsCancellationRequested)
                 {
