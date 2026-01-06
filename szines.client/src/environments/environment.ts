@@ -1,3 +1,3 @@
 export const environment = {
-    apiUrl: 'http://localhost:5001/api/colors'
+    apiUrl: 'https://api.zsebehazimate.hu/api/colors'
 };

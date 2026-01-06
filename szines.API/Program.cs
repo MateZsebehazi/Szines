@@ -19,7 +19,15 @@ if (builder.Environment.IsProduction())
 {
     builder.WebHost.ConfigureKestrel(options =>
     {
-        options.ListenAnyIP(int.Parse(builder.Configuration["settings:port"] ?? "6500"));
+        options.ListenAnyIP(int.Parse(builder.Configuration["settings:port"] ?? "5000"));
+    });
+}
+
+if (builder.Environment.IsStaging())
+{
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ListenAnyIP(int.Parse(builder.Configuration["settings:test_port"] ?? "5001"));
     });
 }
 
@@ -35,9 +43,27 @@ if (app.Environment.IsDevelopment())
 app.UseCors(t => t
                 .WithOrigins(builder.Configuration["settings:frontend"] ?? "http://localhost:4200")
                 .AllowAnyHeader()
-                .AllowCredentials()
                 .AllowAnyMethod());
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
+
+        context.Database.Migrate();
+
+        Console.WriteLine("Adatbázis sikeresen frissítve!");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Hiba a migráció során: {ex.Message}");
+    }
+}
+
+app.Run();
 
 app.Run();
